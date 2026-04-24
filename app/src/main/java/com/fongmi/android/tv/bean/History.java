@@ -85,36 +85,32 @@ public class History implements Diffable<History> {
     }
 
     public static List<History> get() {
-        return get(VodConfig.getCid());
-    }
-
-    public static List<History> get(int cid) {
-        return AppDatabase.get().getHistoryDao().find(cid, System.currentTimeMillis() - Constant.HISTORY_TIME);
+        return AppDatabase.get().getHistoryDao().find(System.currentTimeMillis() - Constant.HISTORY_TIME);
     }
 
     public static History find(String key) {
-        return AppDatabase.get().getHistoryDao().find(VodConfig.getCid(), key);
+        return AppDatabase.get().getHistoryDao().find(key);
     }
 
     public static List<History> findByName(String name) {
         try {
-            return AppDatabase.get().getHistoryDao().findByName(VodConfig.getCid(), name);
+            return AppDatabase.get().getHistoryDao().findByName(name);
         } catch (Exception e) {
             return Collections.emptyList();
         }
     }
 
-    public static void delete(int cid) {
-        AppDatabase.get().getHistoryDao().delete(cid);
+    public static void deleteAll() {
+        AppDatabase.get().getHistoryDao().delete();
     }
 
     public static void sync(List<History> targets) {
         targets.forEach(target -> {
             List<History> items = findByName(target.getVodName());
-            if (items.isEmpty()) target.cid(VodConfig.getCid()).save();
+            if (items.isEmpty()) target.save();
             else {
                 long latestTime = items.stream().mapToLong(History::getCreateTime).max().orElse(0L);
-                if (target.getCreateTime() > latestTime) target.cid(VodConfig.getCid()).merge(items, true).save();
+                if (target.getCreateTime() > latestTime) target.merge(items, true).save();
             }
         });
     }
@@ -340,7 +336,7 @@ public class History implements Diffable<History> {
     }
 
     public History delete() {
-        AppDatabase.get().getHistoryDao().delete(VodConfig.getCid(), getKey());
+        AppDatabase.get().getHistoryDao().deleteByKey(getKey());
         AppDatabase.get().getTrackDao().delete(getKey());
         return this;
     }

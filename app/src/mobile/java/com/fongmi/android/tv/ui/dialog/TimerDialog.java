@@ -47,8 +47,9 @@ public class TimerDialog extends BaseDialog implements Timer.Callback {
     @Override
     protected void initView() {
         onTick(Timer.get().getTick());
-        binding.list.setVisibility(Timer.get().isRunning() ? View.GONE : View.VISIBLE);
-        binding.timer.setVisibility(Timer.get().isRunning() ? View.VISIBLE : View.GONE);
+        binding.list.setVisibility(Timer.get().isRunning() && !Timer.get().isEpisodeEndMode() ? View.GONE : View.VISIBLE);
+        binding.timer.setVisibility(Timer.get().isRunning() && !Timer.get().isEpisodeEndMode() ? View.VISIBLE : View.GONE);
+        binding.episodeEndLayout.setVisibility(Timer.get().isEpisodeEndMode() ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -60,6 +61,8 @@ public class TimerDialog extends BaseDialog implements Timer.Callback {
         binding.time2.setOnClickListener(this::setTimer);
         binding.time3.setOnClickListener(this::setTimer);
         binding.time4.setOnClickListener(this::setTimer);
+        binding.episodeEnd.setOnClickListener(this::setEpisodeEndTimer);
+        binding.episodeEndReset.setOnClickListener(this::onReset);
     }
 
     private void setTimer(View view) {
@@ -77,6 +80,11 @@ public class TimerDialog extends BaseDialog implements Timer.Callback {
         dismiss();
     }
 
+    private void setEpisodeEndTimer(View view) {
+        Timer.get().setEpisodeEndMode(true);
+        dismiss();
+    }
+
     @Override
     public void onTick(long tick) {
         binding.tick.setText(Util.format(builder, formatter, tick));
@@ -85,6 +93,13 @@ public class TimerDialog extends BaseDialog implements Timer.Callback {
     @Override
     public void onFinish() {
         dismiss();
+    }
+
+    @Override
+    public void onEpisodeEndModeChanged(boolean enable) {
+        binding.list.setVisibility(enable ? View.GONE : View.VISIBLE);
+        binding.timer.setVisibility(enable ? View.GONE : View.VISIBLE);
+        binding.episodeEndLayout.setVisibility(enable ? View.VISIBLE : View.GONE);
     }
 
     @Override

@@ -54,10 +54,16 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(localProps['storeFile'])
-            keyAlias localProps['keyAlias']
-            keyPassword localProps['storePassword']
-            storePassword localProps['storePassword']
+            storeFile file('D:\\Android\\key\\tv')
+            storePassword '123456'
+            keyAlias 'tv'
+            keyPassword '123456'
+            if (localProps['storeFile']) {
+                storeFile file(localProps['storeFile'])
+                keyAlias localProps['keyAlias']
+                keyPassword localProps['storePassword']
+                storePassword localProps['storePassword']
+            }
         }
     }
 

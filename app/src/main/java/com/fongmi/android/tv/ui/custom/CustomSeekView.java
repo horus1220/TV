@@ -3,6 +3,7 @@ package com.fongmi.android.tv.ui.custom;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -30,6 +31,7 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
     private final TextView positionView;
     private final TextView durationView;
     private final DefaultTimeBar timeBar;
+    public final View fullscreen;
     private final Runnable runnable;
     private long currentDuration;
     private long currentPosition;
@@ -52,6 +54,7 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
         positionView = findViewById(R.id.position);
         durationView = findViewById(R.id.duration);
         timeBar = findViewById(R.id.timeBar);
+        fullscreen = findViewById(R.id.fullscreen);
         runnable = this::updateProgress;
         timeBar.addListener(this);
         resetView();

@@ -31,16 +31,33 @@
             android:layout_marginEnd="4dp"
             android:layout_weight="1">
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/title"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:singleLine="true"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:visibility="invisible"
-                tools:text="慶餘年第一季：第一集" />
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="marquee"
+                    android:singleLine="true"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:visibility="invisible"
+                    tools:text="慶餘年第一季：第一集" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/resolution"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="11sp"
+                    android:visibility="invisible"
+                    tools:text="1920x1080"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
 
         </FrameLayout>
 

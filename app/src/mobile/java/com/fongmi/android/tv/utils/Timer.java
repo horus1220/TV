@@ -14,6 +14,7 @@ public class Timer {
     private CountDownTimer timer;
     private Callback callback;
     private long tick;
+    private boolean episodeEndMode;
 
     private static class Loader {
         static volatile Timer INSTANCE = new Timer();
@@ -24,7 +25,11 @@ public class Timer {
     }
 
     public boolean isRunning() {
-        return timer != null;
+        return timer != null || episodeEndMode;
+    }
+
+    public boolean isEpisodeEndMode() {
+        return episodeEndMode;
     }
 
     public void setCallback(Callback callback) {
@@ -47,6 +52,11 @@ public class Timer {
                 Timer.this.onFinish();
             }
         }.start();
+    }
+
+    public void setEpisodeEndMode(boolean enable) {
+        this.episodeEndMode = enable;
+        if (callback != null) callback.onEpisodeEndModeChanged(enable);
     }
 
     private void onTick(long tick) {
@@ -73,6 +83,7 @@ public class Timer {
 
     public void reset() {
         tick = 0;
+        episodeEndMode = false;
         cancel();
     }
 
@@ -86,5 +97,7 @@ public class Timer {
         void onTick(long tick);
 
         void onFinish();
+
+        default void onEpisodeEndModeChanged(boolean enable) {}
     }
 }

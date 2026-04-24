@@ -74,6 +74,17 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp" />
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/episode_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/shape_accent"
+            android:text="@string/timer_episode_end"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp" />
+
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <androidx.appcompat.widget.LinearLayoutCompat
@@ -116,4 +127,35 @@
             android:textColor="?android:attr/textColorPrimary" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/episodeEndLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/timer_episode_end_active"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="18sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/episodeEndReset"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:singleLine="true"
+            android:text="@string/timer_cancel_episode_end"
+            android:textColor="?android:attr/textColorPrimary" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
 </androidx.appcompat.widget.LinearLayoutCompat>

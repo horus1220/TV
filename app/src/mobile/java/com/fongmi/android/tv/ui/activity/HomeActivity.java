@@ -37,6 +37,8 @@ import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.FragmentStateManager;
+import com.fongmi.android.tv.ui.fragment.CustomizeFragment;
+import com.fongmi.android.tv.ui.fragment.HistoryKeepFragment;
 import com.fongmi.android.tv.ui.fragment.SettingFragment;
 import com.fongmi.android.tv.ui.fragment.SettingPlayerFragment;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
@@ -111,8 +113,10 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
             @Override
             public Fragment getItem(int position) {
                 if (position == 0) return VodFragment.newInstance();
-                if (position == 1) return SettingFragment.newInstance();
-                if (position == 2) return SettingPlayerFragment.newInstance();
+                if (position == 1) return HistoryKeepFragment.newInstance();
+                if (position == 2) return SettingFragment.newInstance();
+                if (position == 3) return CustomizeFragment.newInstance();
+                if (position == 4) return SettingPlayerFragment.newInstance();
                 return null;
             }
         };
@@ -152,6 +156,7 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
 
     private void setNavigation() {
         mBinding.navigation.getMenu().findItem(R.id.vod).setVisible(true);
+        mBinding.navigation.getMenu().findItem(R.id.history).setVisible(true);
         mBinding.navigation.getMenu().findItem(R.id.setting).setVisible(true);
         mBinding.navigation.getMenu().findItem(R.id.live).setVisible(LiveConfig.hasUrl());
     }
@@ -196,7 +201,8 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         if (mBinding.navigation.getSelectedItemId() == item.getItemId()) return false;
-        if (item.getItemId() == R.id.setting) return mManager.change(1);
+        if (item.getItemId() == R.id.setting) return mManager.change(2);
+        if (item.getItemId() == R.id.history) return mManager.change(1);
         if (item.getItemId() == R.id.vod) return mManager.change(0);
         if (item.getItemId() == R.id.live) return openLive();
         return false;
@@ -219,9 +225,11 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     protected void onBackInvoked() {
         if (!mBinding.navigation.getMenu().findItem(R.id.vod).isVisible()) {
             setNavigation();
+        } else if (mManager.isVisible(4)) {
+            change(2);
+        } else if (mManager.isVisible(3)) {
+            change(2);
         } else if (mManager.isVisible(2)) {
-            change(1);
-        } else if (mManager.isVisible(1)) {
             mBinding.navigation.setSelectedItemId(R.id.vod);
         } else if (mManager.canBack(0)) {
             if (PlaybackService.isRunning()) moveTaskToBack(true);

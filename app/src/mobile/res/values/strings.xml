@@ -7,6 +7,7 @@
     <!-- Nav -->
     <string name="nav_vod">Vod</string>
     <string name="nav_live">Live</string>
+    <string name="nav_history">History</string>
     <string name="nav_setting">Setting</string>
 
     <!-- Menu -->
@@ -49,6 +50,9 @@
     <string name="timer_60">1 hour</string>
     <string name="timer_delay">Add 5 minutes</string>
     <string name="timer_cancel">Cancel timer</string>
+    <string name="timer_episode_end">Current episode ends</string>
+    <string name="timer_episode_end_active">Will pause when episode ends</string>
+    <string name="timer_cancel_episode_end">Cancel end timer</string>
 
     <!-- Hint -->
     <string name="shortcut">Shortcut has been added.</string>

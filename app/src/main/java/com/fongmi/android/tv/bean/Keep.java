@@ -44,11 +44,7 @@ public class Keep implements Diffable<Keep> {
     }
 
     public static Keep find(String key) {
-        return find(VodConfig.getCid(), key);
-    }
-
-    public static Keep find(int cid, String key) {
-        return AppDatabase.get().getKeepDao().find(cid, key);
+        return AppDatabase.get().getKeepDao().find(key);
     }
 
     public static boolean exist(String key) {
@@ -60,11 +56,10 @@ public class Keep implements Diffable<Keep> {
     }
 
     public static void delete(int cid) {
-        AppDatabase.get().getKeepDao().delete(cid);
     }
 
     public static void delete(String key) {
-        AppDatabase.get().getKeepDao().delete(key);
+        AppDatabase.get().getKeepDao().deleteVod(key);
     }
 
     public static List<Keep> getVod() {
@@ -156,7 +151,7 @@ public class Keep implements Diffable<Keep> {
     }
 
     public Keep delete() {
-        AppDatabase.get().getKeepDao().delete(getCid(), getKey());
+        AppDatabase.get().getKeepDao().deleteVod(getKey());
         return this;
     }
 

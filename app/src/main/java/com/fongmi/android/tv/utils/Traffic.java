@@ -18,13 +18,17 @@ public class Traffic {
     private static long lastTotalRxBytes;
     private static long lastTimeStamp;
 
+    public static boolean isSupported() {
+        return TrafficStats.getUidRxBytes(UID) != TrafficStats.UNSUPPORTED;
+    }
+
     public static void setSpeed(TextView view) {
-        if (TrafficStats.getUidRxBytes(UID) == TrafficStats.UNSUPPORTED) return;
+        if (!isSupported()) return;
         view.setVisibility(View.VISIBLE);
         view.setText(getSpeed());
     }
 
-    private static String getSpeed() {
+    public static String getSpeed() {
         long nowTimeStamp = System.currentTimeMillis();
         long nowTotalRxBytes = TrafficStats.getUidRxBytes(UID) / 1024;
         long speed = (nowTotalRxBytes - lastTotalRxBytes) * 1000 / Math.max(nowTimeStamp - lastTimeStamp, 1);

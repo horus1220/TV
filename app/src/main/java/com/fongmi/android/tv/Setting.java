@@ -250,6 +250,30 @@ public class Setting {
         Prefers.put("zhuyin", zhuyin);
     }
 
+    public static boolean isShowProgress() {
+        return Prefers.getBoolean("show_progress", true);
+    }
+
+    public static void putShowProgress(boolean showProgress) {
+        Prefers.put("show_progress", showProgress);
+    }
+
+    public static boolean isShowTime() {
+        return Prefers.getBoolean("show_time", true);
+    }
+
+    public static void putShowTime(boolean showTime) {
+        Prefers.put("show_time", showTime);
+    }
+
+    public static boolean isShowSpeed() {
+        return Prefers.getBoolean("show_speed", true);
+    }
+
+    public static void putShowSpeed(boolean showSpeed) {
+        Prefers.put("show_speed", showSpeed);
+    }
+
     public static float getSpeed() {
         return Math.min(Math.max(Prefers.getFloat("speed", 3), 2), 5);
     }

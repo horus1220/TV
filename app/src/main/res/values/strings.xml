@@ -82,6 +82,10 @@
     <string name="setting_backup">Backup</string>
     <string name="setting_restore">Restore</string>
     <string name="setting_version">Version</string>
+    <string name="setting_custom">Customize</string>
+    <string name="custom_show_progress">Show Progress</string>
+    <string name="custom_show_time">Show Time</string>
+    <string name="custom_show_speed">Show Speed</string>
     <string name="setting_choose">Choose</string>
     <string name="setting_off">Off</string>
     <string name="setting_on">On</string>

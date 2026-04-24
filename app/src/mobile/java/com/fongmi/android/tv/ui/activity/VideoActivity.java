@@ -83,6 +83,7 @@ import com.fongmi.android.tv.ui.dialog.EpisodeListDialog;
 import com.fongmi.android.tv.ui.dialog.InfoDialog;
 import com.fongmi.android.tv.ui.dialog.ReceiveDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
+import com.fongmi.android.tv.ui.dialog.TimerDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.FileChooser;
@@ -133,6 +134,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private Runnable mR3;
     private Runnable mR4;
     private Clock mClock;
+    // 四角网速独立定时器
+    private Runnable mOverlaySpeedRunnable;
+    private long mOverlayLastRx;
+    private long mOverlayLastTime;
     private PiP mPiP;
 
     public static void push(FragmentActivity activity, String text) {
@@ -294,11 +299,12 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mObservePlayer = this::setPlayer;
         mObserveSearch = this::setSearch;
         mBroken = new ArrayList<>();
-        mClock = Clock.create();
+        mClock = Clock.create(mBinding.overlayTime);
         mR1 = this::hideControl;
         mR2 = this::setTraffic;
         mR3 = this::setOrient;
         mR4 = this::showEmpty;
+        mOverlaySpeedRunnable = this::updateOverlaySpeed;
         mPiP = new PiP();
         checkDanmakuImg();
         setRecyclerView();
@@ -331,6 +337,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.title.setOnLongClickListener(view -> onChange());
         mBinding.control.right.lock.setOnClickListener(view -> onLock());
         mBinding.control.right.rotate.setOnClickListener(view -> onRotate());
+        mBinding.control.right.timer.setOnClickListener(view -> onTimer());
         mBinding.control.danmaku.setOnClickListener(view -> onDanmakuShow());
         mBinding.control.action.text.setOnClickListener(this::onTrack);
         mBinding.control.action.audio.setOnClickListener(this::onTrack);
@@ -351,6 +358,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.action.reset.setOnLongClickListener(view -> onResetToggle());
         mBinding.control.action.ending.setOnLongClickListener(view -> onEndingReset());
         mBinding.control.action.opening.setOnLongClickListener(view -> onOpeningReset());
+        mBinding.control.seek.fullscreen.setOnClickListener(view -> onFullscreenFromPortrait());
         mBinding.video.setOnTouchListener((view, event) -> mKeyDown.onTouchEvent(event));
         mBinding.control.action.getRoot().setOnTouchListener(this::onActionTouch);
         mBinding.swipeLayout.setOnRefreshListener(this::onSwipeRefresh);
@@ -713,6 +721,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         ControlDialog.create().parent(mBinding).history(mHistory).parse(isUseParse()).player(player()).show(this);
     }
 
+    private void onTimer() {
+        App.post(() -> TimerDialog.create().show(this), 200);
+    }
+
     private void onLock() {
         setLock(!isLock());
         setRequestedOrientation(getLockOrient());
@@ -725,6 +737,11 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         setR1Callback();
         setRotate(!isRotate());
         setRequestedOrientation(ResUtil.isLand(this) ? ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+    }
+
+    private void onFullscreenFromPortrait() {
+        setR1Callback();
+        enterFullscreen();
     }
 
     private void onTrack(View view) {
@@ -880,11 +897,13 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.video.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         setRequestedOrientation(player().isPortrait() ? ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         mBinding.control.title.setVisibility(View.VISIBLE);
+        mBinding.control.resolution.setVisibility(View.VISIBLE);
         setRotate(player().isPortrait());
         mKeyDown.resetScale();
         App.post(mR3, 2000);
         setDanmakuSize();
         hideControl();
+        updateOverlay(true);
     }
 
     private void exitFullscreen() {
@@ -894,12 +913,14 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         setRequestedOrientation(isPort() ? ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_FULL_USER);
         mBinding.episode.postDelayed(() -> mBinding.episode.scrollToPosition(mEpisodeAdapter.getPosition()), 100);
         mBinding.control.title.setVisibility(View.INVISIBLE);
+        mBinding.control.resolution.setVisibility(View.INVISIBLE);
         mBinding.video.setLayoutParams(mFrameParams);
         mKeyDown.resetScale();
         App.post(mR3, 2000);
         setRotate(false);
         setDanmakuSize();
         hideControl();
+        updateOverlay(false);
     }
 
     private void setDanmakuSize() {
@@ -949,6 +970,26 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.widget.error.setText("");
     }
 
+    private void updateOverlay(boolean fullscreen) {
+        if (fullscreen) {
+            mBinding.overlayTime.setVisibility(Setting.isShowTime() ? View.VISIBLE : View.GONE);
+            mBinding.overlaySpeed.setVisibility(Setting.isShowSpeed() ? View.VISIBLE : View.GONE);
+            mBinding.overlayProgress.setVisibility(Setting.isShowProgress() ? View.VISIBLE : View.GONE);
+            updateOverlayProgress(player().getPosition(), player().getDuration());
+            // 启动四角网速独立定时器
+            mOverlayLastRx = 0;
+            mOverlayLastTime = 0;
+            App.removeCallbacks(mOverlaySpeedRunnable);
+            App.post(mOverlaySpeedRunnable, 1000);
+        } else {
+            mBinding.overlayTime.setVisibility(View.GONE);
+            mBinding.overlaySpeed.setVisibility(View.GONE);
+            mBinding.overlayProgress.setVisibility(View.GONE);
+            // 停止四角网速
+            App.removeCallbacks(mOverlaySpeedRunnable);
+        }
+    }
+
     private void showDanmaku() {
         mBinding.danmaku.setVisibility(Setting.isDanmakuShow() ? View.VISIBLE : View.INVISIBLE);
     }
@@ -959,9 +1000,11 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     private void showControl() {
         if (service() == null || isInPictureInPictureMode()) return;
+        mBinding.control.seek.fullscreen.setVisibility(!isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
         mBinding.control.danmaku.setVisibility(isLock() || !player().haveDanmaku() ? View.GONE : View.VISIBLE);
         mBinding.control.setting.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
         mBinding.control.right.rotate.setVisibility(isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
+        mBinding.control.right.timer.setVisibility(isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
         mBinding.control.keep.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
         mBinding.control.parse.setVisibility(isFullscreen() && isUseParse() ? View.VISIBLE : View.GONE);
         mBinding.control.action.getRoot().setVisibility(isFullscreen() ? View.VISIBLE : View.GONE);
@@ -986,8 +1029,35 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        if (!Traffic.isSupported()) return;
+        String speed = Traffic.getSpeed();
+        boolean showProgress = mBinding.progress.getRoot().getVisibility() == View.VISIBLE;
+        if (showProgress) {
+            mBinding.progress.traffic.setVisibility(View.VISIBLE);
+            mBinding.progress.traffic.setText(speed);
+        }
         App.post(mR2, 1000);
+    }
+
+    // 四角网速独立定时器，与缓冲进度条完全隔离
+    private void updateOverlaySpeed() {
+        if (!isFullscreen() || !Setting.isShowSpeed()) return;
+        try {
+            int uid = App.get().getApplicationInfo().uid;
+            long nowRx = android.net.TrafficStats.getUidRxBytes(uid) / 1024;
+            long nowTime = System.currentTimeMillis();
+            if (mOverlayLastTime > 0) {
+                long dt = Math.max(nowTime - mOverlayLastTime, 1);
+                long speedKb = (nowRx - mOverlayLastRx) * 1000 / dt;
+                if (speedKb >= 0) {
+                    String text = speedKb < 1000 ? speedKb + " KB/s" : String.format(java.util.Locale.US, "%.1f MB/s", speedKb / 1024f);
+                    mBinding.overlaySpeed.setText(text);
+                }
+            }
+            mOverlayLastRx = nowRx;
+            mOverlayLastTime = nowTime;
+        } catch (Exception ignored) {}
+        App.post(mOverlaySpeedRunnable, 1000);
     }
 
     private void setOrient() {
@@ -1239,6 +1309,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     protected void onSizeChanged(VideoSize size) {
         changeHeight();
         checkOrientation();
+        updateResolution(size);
     }
 
     @Override
@@ -1257,6 +1328,13 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         if (mHistory.canSave() && mHistory.canSync()) syncHistory();
         if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
             checkEnded(false);
+        }
+        updateOverlayProgress(position, duration);
+    }
+
+    private void updateOverlayProgress(long position, long duration) {
+        if (duration > 0 && Setting.isShowProgress()) {
+            mBinding.overlayProgress.setText(Util.timeMs(position) + " / " + Util.timeMs(duration));
         }
     }
 
@@ -1292,23 +1370,20 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     private void changeHeight() {
         if (isLand() || isFullscreen() || isInPictureInPictureMode()) return;
-        int videoWidth = player().getVideoWidth();
-        int videoHeight = player().getVideoHeight();
-        if (videoWidth == 0 || videoHeight == 0) return;
-        int viewWidth = ResUtil.getScreenWidth();
-        int minHeight = ResUtil.dp2px(150);
-        int maxHeight = ResUtil.getScreenHeight() / 2;
-        int calculated = (int) (viewWidth * ((float) videoHeight / videoWidth));
-        int finalHeight = Math.max(minHeight, Math.min(maxHeight, calculated));
-        if (finalHeight == mBinding.video.getHeight()) return;
-        if (mAnimator.isRunning()) mAnimator.cancel();
-        mAnimator.setIntValues(mBinding.video.getHeight(), finalHeight);
-        mAnimator.setDuration(300);
-        mAnimator.start();
+        // 固定竖屏视频区域高度为 220dp，不随视频宽高比变化
+    }
+
+    private void updateResolution(VideoSize size) {
+        if (size.width <= 0 || size.height <= 0) return;
+        mBinding.control.resolution.setText(size.width + "x" + size.height);
+        mBinding.control.resolution.setVisibility(isFullscreen() ? View.VISIBLE : View.INVISIBLE);
     }
 
     private void checkEnded(boolean notify) {
-        if (mBinding.control.action.loop.isActivated()) {
+        if (Timer.get().isEpisodeEndMode()) {
+            Timer.get().reset();
+            onPaused();
+        } else if (mBinding.control.action.loop.isActivated()) {
             onReplay();
         } else {
             checkNext(notify);
@@ -1670,7 +1745,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         saveHistory(true);
         Timer.get().reset();
         RefreshEvent.keep();
-        App.removeCallbacks(mR1, mR2, mR3, mR4);
+        App.removeCallbacks(mR1, mR2, mR3, mR4, mOverlaySpeedRunnable);
         mViewModel.getResult().removeObserver(mObserveDetail);
         mViewModel.getPlayer().removeObserver(mObservePlayer);
         mViewModel.getSearch().removeObserver(mObserveSearch);
