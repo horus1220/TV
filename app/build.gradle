@@ -51,10 +51,16 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(localProps['storeFile'])
-            keyAlias localProps['keyAlias']
-            keyPassword localProps['storePassword']
-            storePassword localProps['storePassword']
+            if (localProps['storeFile']) {
+                storeFile file(localProps['storeFile'])
+            }
+            if (localProps['keyAlias']) {
+                keyAlias localProps['keyAlias']
+            }
+            if (localProps['storePassword']) {
+                keyPassword localProps['storePassword']
+                storePassword localProps['storePassword']
+            }
         }
     }
 
