@@ -14,6 +14,7 @@ public class Timer {
     private CountDownTimer timer;
     private Callback callback;
     private long tick;
+    private boolean episodeMode; // 本集完毕模式
 
     private static class Loader {
         static volatile Timer INSTANCE = new Timer();
@@ -24,7 +25,11 @@ public class Timer {
     }
 
     public boolean isRunning() {
-        return timer != null;
+        return timer != null || episodeMode;
+    }
+
+    public boolean isEpisodeMode() {
+        return episodeMode;
     }
 
     public void setCallback(Callback callback) {
@@ -47,6 +52,24 @@ public class Timer {
                 Timer.this.onFinish();
             }
         }.start();
+    }
+
+    /**
+     * 设置本集完毕模式 - 播放完当前视频后触发回调
+     */
+    public void setEpisodeMode(boolean enable) {
+        episodeMode = enable;
+        if (callback != null) callback.onEpisodeMode(enable);
+    }
+
+    /**
+     * 触发本集完毕回调（当视频播放结束时调用）
+     */
+    public void onEpisodeEnd() {
+        if (episodeMode) {
+            if (callback != null) callback.onFinish();
+            reset();
+        }
     }
 
     private void onTick(long tick) {
@@ -73,6 +96,7 @@ public class Timer {
 
     public void reset() {
         tick = 0;
+        episodeMode = false;
         cancel();
     }
 
@@ -86,5 +110,7 @@ public class Timer {
         void onTick(long tick);
 
         void onFinish();
+
+        default void onEpisodeMode(boolean enabled) {}
     }
 }

@@ -2,6 +2,7 @@ package com.fongmi.android.tv.ui.dialog;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,10 @@ public abstract class BaseSideSheetDialog extends AppCompatDialogFragment {
 
     protected abstract int getWidth();
 
+    protected boolean isCenterVertical() {
+        return false;
+    }
+
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -37,7 +42,23 @@ public abstract class BaseSideSheetDialog extends AppCompatDialogFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return getBinding(inflater, container).getRoot();
+        View content = getBinding(inflater, container).getRoot();
+        if (isCenterVertical()) {
+            FrameLayout wrapper = new FrameLayout(requireContext());
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            );
+            wrapper.setLayoutParams(lp);
+            FrameLayout.LayoutParams contentLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            contentLp.gravity = Gravity.CENTER;
+            wrapper.addView(content, contentLp);
+            return wrapper;
+        }
+        return content;
     }
 
     @Override

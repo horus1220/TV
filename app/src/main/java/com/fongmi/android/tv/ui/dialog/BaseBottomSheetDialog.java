@@ -2,6 +2,7 @@ package com.fongmi.android.tv.ui.dialog;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -59,11 +61,30 @@ public abstract class BaseBottomSheetDialog extends BottomSheetDialogFragment {
         return false;
     }
 
+    /**
+     * 子类可重写，返回弹窗固定宽度 (dp)
+     * 返回 0 或负数表示不使用固定宽度
+     */
+    protected int getFixedWidthDp() {
+        return 0;
+    }
+
+
     protected void setBehavior(BottomSheetDialog dialog) {
         FrameLayout sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
         if (sheet == null) return;
+        // 设置自定义宽度：优先使用固定 dp 宽度，其次使用比例宽度
+        int fixedDp = getFixedWidthDp();
+        if (fixedDp > 0) {
+            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) sheet.getLayoutParams();
+            params.width = ResUtil.dp2px(fixedDp);
+            params.gravity = Gravity.CENTER_HORIZONTAL;
+            sheet.setLayoutParams(params);
+        }
         if (transparent()) sheet.setBackgroundColor(ResUtil.getColor(R.color.transparent));
         BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(sheet);
+        behavior.setFitToContents(true);
+        behavior.setExpandedOffset(0);
         behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         behavior.setSkipCollapsed(true);
     }

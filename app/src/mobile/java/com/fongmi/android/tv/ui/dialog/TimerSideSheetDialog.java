@@ -1,6 +1,5 @@
 package com.fongmi.android.tv.ui.dialog;
 
-import android.content.res.Configuration;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +11,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.databinding.DialogTimerBinding;
+import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Timer;
 import com.fongmi.android.tv.utils.Util;
 
@@ -19,29 +19,41 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-public class TimerDialog extends BaseBottomSheetDialog implements Timer.Callback {
+public class TimerSideSheetDialog extends BaseSideSheetDialog implements Timer.Callback {
 
     private final StringBuilder builder;
     private final Formatter formatter;
     private DialogTimerBinding binding;
 
-    public TimerDialog() {
+    public TimerSideSheetDialog() {
         builder = new StringBuilder();
         formatter = new Formatter(builder, Locale.getDefault());
     }
 
-    public static TimerDialog create() {
-        return new TimerDialog();
+    public static TimerSideSheetDialog create() {
+        return new TimerSideSheetDialog();
     }
 
     public void show(FragmentActivity activity) {
-        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof TimerDialog) return;
+        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof TimerSideSheetDialog) return;
         show(activity.getSupportFragmentManager(), null);
     }
 
     @Override
     protected ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
         return binding = DialogTimerBinding.inflate(inflater, container, false);
+    }
+
+    @Override
+    protected int getWidth() {
+        int minWidth = ResUtil.dp2px(150);
+        int maxWidth = ResUtil.getScreenWidth() / 3;
+        return Math.min(minWidth, maxWidth);
+    }
+
+    @Override
+    protected boolean isCenterVertical() {
+        return true;
     }
 
     @Override
@@ -70,7 +82,6 @@ public class TimerDialog extends BaseBottomSheetDialog implements Timer.Callback
     }
 
     private void setEpisodeTimer(View view) {
-        // 本集完毕模式：设置标志，不启动倒计时
         Timer.get().setEpisodeMode(true);
         dismiss();
     }
@@ -98,14 +109,5 @@ public class TimerDialog extends BaseBottomSheetDialog implements Timer.Callback
     public void dismiss() {
         Timer.get().setCallback(null);
         super.dismiss();
-    }
-
-    @Override
-    protected int getFixedWidthDp() {
-        // 仅横屏时使用固定宽度，竖屏保持默认全宽
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            return 130;
-        }
-        return 0;
     }
 }

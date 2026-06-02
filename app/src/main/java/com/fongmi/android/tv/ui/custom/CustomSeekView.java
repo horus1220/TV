@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -30,6 +31,7 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
     private final TextView positionView;
     private final TextView durationView;
     private final DefaultTimeBar timeBar;
+    private final ImageView fullscreenView;
     private final Runnable runnable;
     private long currentDuration;
     private long currentPosition;
@@ -52,6 +54,7 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
         positionView = findViewById(R.id.position);
         durationView = findViewById(R.id.duration);
         timeBar = findViewById(R.id.timeBar);
+        fullscreenView = findViewById(R.id.fullscreen);
         runnable = this::updateProgress;
         timeBar.addListener(this);
         resetView();
@@ -107,6 +110,10 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
         } else {
             postDelayed(runnable, MAX_UPDATE_INTERVAL_MS);
         }
+    }
+
+    public ImageView getFullscreen() {
+        return fullscreenView;
     }
 
     private void resetView() {

@@ -66,6 +66,7 @@ import com.fongmi.android.tv.player.PlayerHelper;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.DanmakuSetting;
+import com.fongmi.android.tv.setting.DisplaySetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
@@ -86,6 +87,8 @@ import com.fongmi.android.tv.ui.dialog.EpisodeListDialog;
 import com.fongmi.android.tv.ui.dialog.InfoDialog;
 import com.fongmi.android.tv.ui.dialog.ReceiveDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
+import com.fongmi.android.tv.ui.dialog.TimerDialog;
+import com.fongmi.android.tv.ui.dialog.TimerSideSheetDialog;
 import com.fongmi.android.tv.ui.dialog.TitleDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.utils.Clock;
@@ -105,6 +108,8 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -137,6 +142,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private Runnable mR4;
     private Clock mClock;
     private PiP mPiP;
+    private static final DateTimeFormatter CLOCK_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static void push(FragmentActivity activity, String text) {
         if (FileChooser.isValid(activity, Uri.parse(text))) file(activity, FileChooser.getPathFromUri(Uri.parse(text)));
@@ -331,6 +337,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.prev.setOnClickListener(view -> checkPrev());
         mBinding.control.setting.setOnClickListener(view -> onSetting());
         mBinding.control.title.setOnLongClickListener(view -> onChange());
+        mBinding.control.right.timer.setOnClickListener(view -> onRightTimer());
         mBinding.control.right.lock.setOnClickListener(view -> onLock());
         mBinding.control.right.rotate.setOnClickListener(view -> onRotate());
         mBinding.control.danmaku.setOnClickListener(view -> onDanmakuShow());
@@ -353,6 +360,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.action.reset.setOnLongClickListener(view -> onResetToggle());
         mBinding.control.action.ending.setOnLongClickListener(view -> onEndingReset());
         mBinding.control.action.opening.setOnLongClickListener(view -> onOpeningReset());
+        mBinding.control.seek.getFullscreen().setOnClickListener(view -> { if (!isFullscreen()) enterFullscreen(); });
         mBinding.video.setOnTouchListener((view, event) -> mKeyDown.onTouchEvent(event));
         mBinding.control.action.getRoot().setOnTouchListener(this::onActionTouch);
         mBinding.swipeLayout.setOnRefreshListener(this::onSwipeRefresh);
@@ -726,7 +734,13 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         setRequestedOrientation(getLockOrient());
         mKeyDown.setLock(isLock());
         checkLockImg();
-        showControl();
+        if (isLock()) {
+            // 锁定时显示控制层（锁定状态）并隐藏全屏信息层
+            showControl();
+        } else {
+            // 解锁时隐藏控制层，让全屏信息层按设置显示
+            hideControl();
+        }
     }
 
     private void onRotate() {
@@ -759,6 +773,15 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void onRepeat() {
         player().setRepeatOne(!player().isRepeatOne());
         mBinding.control.action.repeat.setSelected(player().isRepeatOne());
+    }
+
+    private void onRightTimer() {
+        if (isFullscreen()) {
+            TimerSideSheetDialog.create().show(this);
+        } else {
+            TimerDialog.create().show(this);
+        }
+        hideControl();
     }
 
     @Override
@@ -899,6 +922,11 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mKeyDown.resetScale();
         App.post(mR3, 2000);
         hideControl();
+        // 显示全屏常驻信息层
+        showFullscreenOverlay();
+        // 重新启动网速/进度更新定时器
+        App.removeCallbacks(mR2);
+        App.post(mR2, 1000);
     }
 
     private void exitFullscreen() {
@@ -913,6 +941,13 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         App.post(mR3, 2000);
         setRotate(false);
         hideControl();
+        // 隐藏全屏常驻信息层
+        hideFullscreenOverlay();
+        // 退出全屏后，停止网速更新定时器并重置（如果不在缓冲状态）
+        if (mBinding.progress.getRoot().getVisibility() != View.VISIBLE) {
+            App.removeCallbacks(mR2);
+            Traffic.reset();
+        }
     }
 
     private void setTransition() {
@@ -942,8 +977,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     private void hideProgress() {
         mBinding.progress.getRoot().setVisibility(View.GONE);
-        App.removeCallbacks(mR2);
-        Traffic.reset();
+        // 全屏模式不停止网速更新定时器，因为常驻信息层仍需实时刷新网速
+        if (!isFullscreen()) App.removeCallbacks(mR2);
+        // 全屏模式不重置网速，因为常驻信息层仍需显示实时网速
+        if (!isFullscreen()) Traffic.reset();
     }
 
     private void showError(String text) {
@@ -969,6 +1006,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         if (service() == null || isInPictureInPictureMode()) return;
         mBinding.control.danmaku.setVisibility(isLock() || !player().haveDanmaku() ? View.GONE : View.VISIBLE);
         mBinding.control.setting.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
+        mBinding.control.right.timer.setVisibility(isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
         mBinding.control.right.rotate.setVisibility(isFullscreen() && !isLock() ? View.VISIBLE : View.GONE);
         mBinding.control.keep.setVisibility(mHistory == null || isFullscreen() ? View.GONE : View.VISIBLE);
         mBinding.control.parse.setVisibility(isFullscreen() && isUseParse() ? View.VISIBLE : View.GONE);
@@ -980,13 +1018,62 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.bottom.setVisibility(isLock() ? View.GONE : View.VISIBLE);
         mBinding.control.back.setVisibility(isLock() ? View.GONE : View.VISIBLE);
         mBinding.control.top.setVisibility(isLock() ? View.GONE : View.VISIBLE);
+        // 全屏时在标题下方显示分辨率
+        mBinding.control.resolutionText.setVisibility(isFullscreen() ? View.VISIBLE : View.GONE);
+       mBinding.control.seek.getFullscreen().setVisibility(!isFullscreen() ? View.VISIBLE : View.GONE);
         mBinding.control.getRoot().setVisibility(View.VISIBLE);
+        // 控制层可见时，隐藏全屏常驻信息层（两者互斥）
+        if (isFullscreen()) hideFullscreenOverlay();
         setR1Callback();
     }
 
     private void hideControl() {
         mBinding.control.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR1);
+        // 控制层不可见时，根据设置显示全屏常驻信息层
+        if (isFullscreen()) {
+            showFullscreenOverlay();
+        }
+    }
+
+    // 全屏常驻信息层管理（独立于控制层，控制层隐藏后仍显示）
+    private void showFullscreenOverlay() {
+        if (isLock()) return;
+        mBinding.fullscreenOverlay.setVisibility(View.VISIBLE);
+        // 根据设置显示/隐藏各元素（各元素独立定位）
+        mBinding.fsClockText.setVisibility(DisplaySetting.isShowTime() ? View.VISIBLE : View.GONE);
+        mBinding.fsSpeedText.setVisibility(DisplaySetting.isShowSpeed() ? View.VISIBLE : View.GONE);
+        mBinding.fsProgressText.setVisibility(DisplaySetting.isShowProgress() ? View.VISIBLE : View.GONE);
+        // 立即更新内容
+        updateFullscreenOverlay();
+    }
+
+    private void hideFullscreenOverlay() {
+        mBinding.fullscreenOverlay.setVisibility(View.GONE);
+    }
+
+    private void updateFullscreenOverlay() {
+        boolean needUpdate = false;
+        // 更新时钟（仅当可见时）
+        if (mBinding.fsClockText.getVisibility() == View.VISIBLE) {
+            mBinding.fsClockText.setText(CLOCK_FORMAT.format(LocalDateTime.now()));
+            needUpdate = true;
+        }
+        // 更新网速（仅当可见时，使用缓存值避免重复计算）
+        if (mBinding.fsSpeedText.getVisibility() == View.VISIBLE) {
+            mBinding.fsSpeedText.setText(Traffic.getSpeedText());
+            needUpdate = true;
+        }
+        // 更新进度（仅当可见且播放器就绪时）
+        if (DisplaySetting.isShowProgress() && player() != null && player().getDuration() > 0
+                && mBinding.fsProgressText.getVisibility() == View.VISIBLE) {
+            mBinding.fsProgressText.setText(player().getPositionTime(0) + " / " + player().getDurationTime());
+            needUpdate = true;
+        }
+        // 如果没有任何可见元素，提前返回避免不必要的后续操作
+        if (!needUpdate && !DisplaySetting.isShowTime() && !DisplaySetting.isShowSpeed() && !DisplaySetting.isShowProgress()) {
+            hideFullscreenOverlay();
+        }
     }
 
     private void hideSheet() {
@@ -994,8 +1081,16 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
-        App.post(mR2, 1000);
+        // 仅当控制层的网速视图可见或全屏网速可见时才计算和更新
+        boolean controlVisible = mBinding.progress.traffic.getVisibility() == View.VISIBLE;
+        boolean fsVisible = isFullscreen() && mBinding.fullscreenOverlay.getVisibility() == View.VISIBLE
+                && mBinding.fsSpeedText.getVisibility() == View.VISIBLE;
+        if (controlVisible || fsVisible) {
+            Traffic.setSpeed(mBinding.progress.traffic);
+            if (fsVisible) updateFullscreenOverlay();
+            App.post(mR2, 1000);
+        }
+        // 如果都不可见，停止网速定时器（下次显示控制层时会重新启动）
     }
 
     private void setOrient() {
@@ -1066,7 +1161,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     private void saveHistory(boolean exit) {
         if (mHistory != null && mHistory.canSave() && !Setting.isIncognito()) Task.execute(() -> {
             mHistory.merge().save();
-            if (exit) RefreshEvent.history();
+            RefreshEvent.history();
         });
     }
 
@@ -1241,8 +1336,12 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
 
     @Override
     protected void onSizeChanged(VideoSize size) {
-        changeHeight();
         checkOrientation();
+        // 更新分辨率显示（控制层标题下方）
+        if (size.width > 0 && size.height > 0) {
+            String resText = size.width + " x " + size.height;
+            mBinding.control.resolutionText.setText(resText);
+        }
     }
 
     @Override
@@ -1258,6 +1357,10 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mHistory.setCreateTime(time);
         mHistory.setPosition(position = player().getPosition());
         mHistory.setDuration(duration = player().getDuration());
+        // 仅在全屏模式且常驻信息层可见时才更新UI
+        if (isFullscreen() && mBinding.fullscreenOverlay.getVisibility() == View.VISIBLE) {
+            updateFullscreenOverlay();
+        }
         if (mHistory.canSave() && mHistory.canSync()) syncHistory();
         if (mHistory.getEnding() > 0 && duration > 0 && mHistory.getEnding() + position >= duration) {
             checkEnded(false);
@@ -1294,24 +1397,14 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         }
     }
 
-    private void changeHeight() {
-        if (isLand() || isFullscreen() || isInPictureInPictureMode()) return;
-        int videoWidth = player().getVideoWidth();
-        int videoHeight = player().getVideoHeight();
-        if (videoWidth == 0 || videoHeight == 0) return;
-        int viewWidth = ResUtil.getScreenWidth();
-        int minHeight = ResUtil.dp2px(150);
-        int maxHeight = ResUtil.getScreenHeight() / 2;
-        int calculated = (int) (viewWidth * ((float) videoHeight / videoWidth));
-        int finalHeight = Math.max(minHeight, Math.min(maxHeight, calculated));
-        if (finalHeight == mBinding.video.getHeight()) return;
-        if (mAnimator.isRunning()) mAnimator.cancel();
-        mAnimator.setIntValues(mBinding.video.getHeight(), finalHeight);
-        mAnimator.setDuration(300);
-        mAnimator.start();
-    }
 
     private void checkEnded(boolean notify) {
+        // 检查是否设置了本集完毕定时器
+        if (Timer.get().isEpisodeMode()) {
+            Timer.get().onEpisodeEnd();
+            finish();
+            return;
+        }
         checkNext(notify);
     }
 

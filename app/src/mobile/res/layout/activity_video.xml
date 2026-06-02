@@ -41,6 +41,53 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
 
+        <!-- 全屏模式常驻信息层（不受控制层显示/隐藏影响） -->
+        <RelativeLayout
+            android:id="@+id/fullscreenOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <!-- 右上角时间 -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/fsClockText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="18dp"
+                android:layout_marginEnd="18dp"
+                android:textColor="@color/white_90"
+                android:textSize="13sp"
+                tools:text="16:28:35" />
+
+            <!-- 左下角进度 -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/fsProgressText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="18dp"
+                android:layout_marginBottom="18dp"
+                android:textColor="@color/white_80"
+                android:textSize="12sp"
+                tools:text="12:30 / 40:32" />
+
+            <!-- 右下角网速 -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/fsSpeedText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="18dp"
+                android:layout_marginBottom="18dp"
+                android:textColor="@color/white_80"
+                android:textSize="12sp"
+                tools:text="1.2 MB/s" />
+
+        </RelativeLayout>
+
         <include
             android:id="@+id/progress"
             layout="@layout/view_progress"

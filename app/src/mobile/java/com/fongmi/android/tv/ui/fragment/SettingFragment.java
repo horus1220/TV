@@ -25,6 +25,7 @@ import com.fongmi.android.tv.impl.Callback;
 import com.fongmi.android.tv.impl.ConfigListener;
 import com.fongmi.android.tv.impl.LiveListener;
 import com.fongmi.android.tv.impl.SiteListener;
+import com.fongmi.android.tv.setting.DisplaySetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
@@ -125,6 +126,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.cache.setOnClickListener(this::onCache);
         mBinding.backup.setOnClickListener(this::onBackup);
         mBinding.player.setOnClickListener(this::onPlayer);
+        mBinding.display.setOnClickListener(this::onDisplay);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
         mBinding.restore.setOnClickListener(this::onRestore);
         mBinding.version.setOnClickListener(this::onVersion);
@@ -247,11 +249,23 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
     }
 
     private void onPlayer(View view) {
-        getRoot().change(2);
+        getRoot().change(3);
     }
 
     private void onDanmaku(View view) {
-        getRoot().change(3);
+        getRoot().change(4);
+    }
+
+    private void onDisplay(View view) {
+        String[] items = {getString(R.string.setting_display_time), getString(R.string.setting_display_speed), getString(R.string.setting_display_progress)};
+        boolean[] checked = {DisplaySetting.isShowTime(), DisplaySetting.isShowSpeed(), DisplaySetting.isShowProgress()};
+        new MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.setting_display).setMultiChoiceItems(items, checked, (dialog, which, isChecked) -> {
+            switch (which) {
+                case 0: DisplaySetting.putShowTime(isChecked); break;
+                case 1: DisplaySetting.putShowSpeed(isChecked); break;
+                case 2: DisplaySetting.putShowProgress(isChecked); break;
+            }
+        }).setPositiveButton(R.string.dialog_positive, null).show();
     }
 
     private void onThemeColor(View view) {

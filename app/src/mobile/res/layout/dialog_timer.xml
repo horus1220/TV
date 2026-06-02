@@ -15,8 +15,9 @@
         android:paddingBottom="16dp">
 
         <com.google.android.material.textview.MaterialTextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:text="@string/play_timer"
             android:textColor="?attr/colorOnSurface"
             android:textSize="16sp" />
@@ -79,6 +80,17 @@
             android:textColor="?attr/colorOnSurface"
             android:textSize="14sp" />
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/time5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/shape_accent"
+            android:tag="-1"
+            android:text="@string/timer_episode"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp" />
+
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <androidx.appcompat.widget.LinearLayoutCompat
@@ -97,7 +109,7 @@
             android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="48sp"
+            android:textSize="24sp"
             tools:text="5:00" />
 
         <com.google.android.material.button.MaterialButton
