@@ -12,14 +12,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 
+import com.fongmi.android.tv.db.AppDatabase;
 import com.fongmi.android.tv.utils.Notify;
+import com.fongmi.android.tv.utils.WebDavConfig;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
+import com.github.catvod.utils.Prefers;
 import com.google.gson.Gson;
 
 public class App extends Application implements Application.ActivityLifecycleCallbacks {
 
     private static volatile App instance;
+
+    private static final long AUTO_BACKUP_INTERVAL = 10 * 60 * 1000L; // 自动备份最小间隔5分钟
+    private static final String KEY_LAST_AUTO_BACKUP = "lastAutoBackupTime";
 
     private final Handler handler;
     private final Gson gson;
@@ -27,6 +33,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private Activity activity;
     private Hook hook;
+    private int activityCount;
 
     public App() {
         instance = this;
@@ -119,9 +126,27 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
+        activityCount++;
     }
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
+        activityCount--;
+        // 所有 Activity 都已停止（应用进入后台），触发 WebDAV 自动备份
+        if (activityCount == 0) autoBackupToWebDAV();
+    }
+
+    /**
+     * 应用退出后台时自动备份到 WebDAV（仅当已配置且距上次备份超过间隔时间）
+     */
+    private void autoBackupToWebDAV() {
+        if (!WebDavConfig.isValid()) return;
+        long lastTime = Prefers.getLong(KEY_LAST_AUTO_BACKUP, 0);
+        if (System.currentTimeMillis() - lastTime < AUTO_BACKUP_INTERVAL) return;
+        Prefers.put(KEY_LAST_AUTO_BACKUP, System.currentTimeMillis());
+        AppDatabase.backupToWebDAV(new com.fongmi.android.tv.impl.Callback() {
+            @Override public void success() { }
+            @Override public void error() { }
+        });
     }
 }

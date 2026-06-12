@@ -209,6 +209,34 @@
     <!-- Hint -->
     <string name="copied">Copied</string>
 
+    <!-- WebDAV -->
+    <string name="setting_backup_local">Backup</string>
+    <string name="setting_restore_local">Restore</string>
+    <string name="setting_webdav_backup">Cloud Backup</string>
+    <string name="setting_webdav_restore">Cloud Restore</string>
+    <string name="setting_webdav_config">WebDAV Config</string>
+    <string name="webdav_setting_title">WebDAV Settings</string>
+    <string name="webdav_hint_url">Server URL (e.g. https://example.com/webdav/)</string>
+    <string name="webdav_hint_username">Username (optional)</string>
+    <string name="webdav_hint_password">Password (optional)</string>
+    <string name="webdav_hint_path">Remote path (e.g. /TV/)</string>
+    <string name="webdav_btn_save">Save</string>
+    <string name="webdav_btn_test">Test Connection</string>
+    <string name="webdav_btn_clear">Clear</string>
+    <string name="webdav_test_success">Connection successful!</string>
+    <string name="webdav_test_fail">Connection failed, please check config</string>
+    <string name="webdav_config_saved">Config saved</string>
+    <string name="webdav_config_cleared">Config cleared</string>
+    <string name="webdav_not_configured">Please configure WebDAV server first</string>
+    <string name="webdav_configured">Configured</string>
+    <string name="webdav_backup_success">Cloud backup successful!</string>
+    <string name="webdav_backup_fail">Cloud backup failed, check network and config</string>
+    <string name="webdav_no_backup">No backup files on remote server</string>
+    <string name="webdav_delete_success">Deleted</string>
+    <string name="webdav_url_empty">Please enter server URL</string>
+    <string name="dialog_confirm_restore">Confirm restore this backup?</string>
+    <string name="dialog_confirm_delete">Confirm delete this backup?</string>
+
     <!-- UNIT -->
     <string name="all">All</string>
     <string name="yes">Yes</string>

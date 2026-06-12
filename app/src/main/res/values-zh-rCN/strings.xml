@@ -1,7 +1,7 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
     <!-- App -->
-    <string name="app_name">我的影视</string>
+    <string name="app_name">影视</string>
 
     <!-- Live -->
     <string name="live_pass">密码</string>
@@ -128,9 +128,35 @@
     <string name="setting_doh">DoH</string>
     <string name="setting_proxy">Proxy</string>
     <string name="setting_cache">缓存</string>
-    <string name="setting_backup">备份</string>
-    <string name="setting_restore">恢复</string>
+    <string name="setting_backup_local">本地备份</string>
+    <string name="setting_restore_local">本地恢复</string>
+    <string name="setting_webdav_backup">云端备份</string>
+    <string name="setting_webdav_restore">云端恢复</string>
+    <string name="setting_webdav_config">WebDAV设置</string>
     <string name="setting_version">版本</string>
+
+    <!-- WebDAV -->
+    <string name="webdav_url_empty">请输入服务器地址</string>
+    <string name="webdav_test_success">连接成功！</string>
+    <string name="webdav_test_fail">连接失败，请检查配置</string>
+    <string name="webdav_config_saved">配置已保存</string>
+    <string name="webdav_config_cleared">配置已清除</string>
+    <string name="webdav_not_configured">请先配置WebDAV服务器</string>
+    <string name="webdav_configured">已配置</string>
+    <string name="webdav_backup_success">云端备份成功！</string>
+    <string name="webdav_backup_fail">云端备份失败，请检查网络和配置</string>
+    <string name="webdav_no_backup">远程没有备份文件</string>
+    <string name="webdav_delete_success">已删除</string>
+    <string name="dialog_confirm_restore">确认要恢复此备份吗？</string>
+    <string name="dialog_confirm_delete">确认要删除此备份吗？</string>
+    <string name="webdav_setting_title">WebDAV 设置</string>
+    <string name="webdav_hint_url">服务器地址 (如 https://example.com/webdav/)</string>
+    <string name="webdav_hint_username">用户名 (可选)</string>
+    <string name="webdav_hint_password">密码 (可选)</string>
+    <string name="webdav_hint_path">远程路径 (如 /TV/)</string>
+    <string name="webdav_btn_save">保存</string>
+    <string name="webdav_btn_test">测试连接</string>
+    <string name="webdav_btn_clear">清除</string>
     <string name="setting_choose">选择</string>
     <string name="setting_off">关</string>
     <string name="setting_on">开</string>

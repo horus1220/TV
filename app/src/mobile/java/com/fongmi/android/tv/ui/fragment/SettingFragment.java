@@ -36,6 +36,8 @@ import com.fongmi.android.tv.ui.dialog.LiveDialog;
 import com.fongmi.android.tv.ui.dialog.RestoreDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.dialog.ThemeDialog;
+import com.fongmi.android.tv.ui.dialog.WebDAVDialog;
+import com.fongmi.android.tv.ui.dialog.WebDARestoreDialog;
 import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
@@ -98,6 +100,7 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.versionText.setText(BuildConfig.VERSION_NAME);
         setOtherText();
         setCacheText();
+        updateWebDAVStatus();
     }
 
     private void setOtherText() {
@@ -125,10 +128,13 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
         mBinding.size.setOnClickListener(this::setSize);
         mBinding.cache.setOnClickListener(this::onCache);
         mBinding.backup.setOnClickListener(this::onBackup);
+        mBinding.webdavConfig.setOnClickListener(this::onWebDAVConfig);
+        mBinding.webdavBackup.setOnClickListener(this::onWebDAVBackup);
         mBinding.player.setOnClickListener(this::onPlayer);
         mBinding.display.setOnClickListener(this::onDisplay);
         mBinding.danmaku.setOnClickListener(this::onDanmaku);
         mBinding.restore.setOnClickListener(this::onRestore);
+        mBinding.webdavRestore.setOnClickListener(this::onWebDARestore);
         mBinding.version.setOnClickListener(this::onVersion);
         mBinding.vod.setOnLongClickListener(this::onVodEdit);
         mBinding.vodHome.setOnClickListener(this::onVodHome);
@@ -356,6 +362,100 @@ public class SettingFragment extends BaseFragment implements ConfigListener, Sit
                 Notify.show(R.string.restore_fail);
             }
         }));
+    }
+
+    /**
+     * WebDAV 配置
+     */
+    private void onWebDAVConfig(View view) {
+        WebDAVDialog.create().show(getContext(), new Callback() {
+            @Override
+            public void success() { updateWebDAVStatus(); }
+
+            @Override
+            public void error() {}
+        });
+    }
+
+    /** 更新 WebDAV 配置状态显示 */
+    private void updateWebDAVStatus() {
+        if (mBinding == null) return;
+        if (com.fongmi.android.tv.utils.WebDavConfig.isValid()) {
+            mBinding.webdavConfigStatus.setText(R.string.webdav_configured);
+            mBinding.webdavConfigStatus.setTextColor(0xFF4CAF50);
+        } else {
+            mBinding.webdavConfigStatus.setText(R.string.webdav_not_configured);
+            mBinding.webdavConfigStatus.setTextColor(0xFF888888);
+        }
+    }
+
+    /**
+     * WebDAV 云端备份
+     */
+    private void onWebDAVBackup(View view) {
+        // 检查是否已配置 WebDAV
+        if (!com.fongmi.android.tv.utils.WebDavConfig.isValid()) {
+            // 未配置，先打开配置对话框
+            WebDAVDialog.create().show(getContext(), new Callback() {
+                @Override
+                public void success() {
+                    // 配置完成后执行备份
+                    executeWebDAVBackup();
+                }
+
+                @Override
+                public void error() {}
+            });
+        } else {
+            // 已配置，直接执行备份
+            executeWebDAVBackup();
+        }
+    }
+
+    /**
+     * 执行 WebDAV 备份
+     */
+    private void executeWebDAVBackup() {
+        Notify.progress(requireActivity());
+        AppDatabase.backupToWebDAV(new Callback() {
+            @Override
+            public void success() {
+                Notify.dismiss();
+                Notify.show(R.string.webdav_backup_success);
+            }
+
+            @Override
+            public void error() {
+                Notify.dismiss();
+                Notify.show(R.string.webdav_backup_fail);
+            }
+        });
+    }
+
+    /**
+     * WebDAV 远程恢复
+     */
+    private void onWebDARestore(View view) {
+        // 检查是否已配置 WebDAV
+        if (!com.fongmi.android.tv.utils.WebDavConfig.isValid()) {
+            Notify.show(R.string.webdav_not_configured);
+            return;
+        }
+
+        // 打开远程备份列表
+        WebDARestoreDialog.create().show(requireActivity(), new Callback() {
+            @Override
+            public void success() {
+                Notify.show(R.string.restore_success);
+                setOtherText();
+                initConfig();
+            }
+
+            @Override
+            public void error() {
+                Notify.show(R.string.restore_fail);
+            }
+        });
     }
 
     private void initConfig() {

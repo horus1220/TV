@@ -80,6 +80,91 @@ public abstract class AppDatabase extends RoomDatabase {
         });
     }
 
+    /**
+     * 备份到 WebDAV 服务器
+     * 流程：先本地备份 -> 再上传到远程
+     */
+    public static void backupToWebDAV(com.fongmi.android.tv.impl.Callback callback) {
+        Task.execute(() -> {
+            try {
+                // 1. 先执行本地备份
+                File file = new File(Path.tv(), "tv-" + LocalDate.now().format(Formatters.DATE) + ".bk");
+                Backup backup = Backup.create();
+                if (backup.getConfig().isEmpty()) {
+                    App.post(callback::error);
+                    return;
+                }
+
+                // 2. 保存到本地文件
+                Path.write(file, backup.toString().getBytes());
+                FileUtil.gzipCompress(file);
+
+                // 3. 获取压缩后的文件
+                File gzFile = new File(file.getAbsolutePath() + ".gz");
+
+                // 4. 上传到 WebDAV
+                com.fongmi.android.tv.utils.WebDAVUtil.uploadBackup(gzFile, new com.fongmi.android.tv.utils.WebDAVUtil.ProgressCallback() {
+                    @Override
+                    public void onProgress(int progress, int max) {
+                        // 进度更新（暂不处理）
+                    }
+
+                    @Override
+                    public void onSuccess(String message) {
+                        cleanOld();
+                        App.post(callback::success);
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                App.post(callback::error);
+            }
+        });
+    }
+
+    /**
+     * 从 WebDAV 恢复备份
+     * @param fileName 远程备份文件名
+     */
+    public static void restoreFromWebDAV(String fileName, com.fongmi.android.tv.impl.Callback callback) {
+        Task.execute(() -> {
+            try {
+                // 1. 从 WebDAV 下载到本地缓存
+                File localFile = com.fongmi.android.tv.utils.WebDAVUtil.downloadBackup(
+                        fileName,
+                        Path.cache(),
+                        new com.fongmi.android.tv.utils.WebDAVUtil.ProgressCallback() {
+                            @Override
+                            public void onProgress(int progress, int max) {
+                                // 进度更新（暂不处理）
+                            }
+
+                            @Override
+                            public void onSuccess(String message) {
+                                // 继续恢复流程
+                            }
+                        });
+
+                // 2. 执行本地恢复
+                File restore = Path.cache("restore");
+                FileUtil.gzipDecompress(localFile, restore);
+                Backup backup = Backup.objectFrom(Path.read(restore));
+                if (backup.getConfig().isEmpty()) {
+                    Path.clear(localFile);
+                    App.post(callback::error);
+                } else {
+                    backup.restore();
+                    Path.clear(restore);
+                    Path.clear(localFile);
+                    App.post(callback::success);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                App.post(callback::error);
+            }
+        });
+    }
+
     private static void cleanOld() {
         List<File> items = new ArrayList<>();
         File[] files = Path.tv().listFiles();

@@ -32,7 +32,9 @@ public class Backup {
 
     public static Backup create() {
         Backup backup = new Backup();
-        backup.setPrefers(Prefers.getPrefers().getAll());
+        Map<String, ?> allPrefers = Prefers.getPrefers().getAll();
+        allPrefers.remove("hot");
+        backup.setPrefers(allPrefers);
         backup.setSite(AppDatabase.get().getSiteDao().findAll());
         backup.setLive(AppDatabase.get().getLiveDao().findAll());
         backup.setKeep(AppDatabase.get().getKeepDao().findAll());
